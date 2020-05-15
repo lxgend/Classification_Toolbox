@@ -2,24 +2,24 @@
 import numpy as np
 import pandas as pd
 import torch
+from torch import nn
+from torch.nn import CrossEntropyLoss
 from torch.optim import SGD,Adam
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 from tqdm import tqdm
 # from transformers import AdamW
-from transformers import BertForSequenceClassification
+from transformers import BertForSequenceClassification, BertModel
 from transformers import BertTokenizer
 from transformers import get_linear_schedule_with_warmup
 
 from parm import *
 
 # PATH_MODEL_BERT = '/home/ubuntu/MyFiles/albert_zh_xxlarge_google_pt'
-PATH_MODEL_BERT = '/home/ubuntu/MyFiles/roberta_zh_L12_pt'
-# PATH_MODEL_BERT = '/home/ubuntu/MyFiles/roberta_wwm_ext_zh_hit_pt'
+PATH_MODEL_BERT = '/home/ubuntu/MyFiles/roberta_wwm_ext_zh_hit_pt'
 
 # PATH_MODEL_BERT = '/Users/lixiang/Documents/nlp_data/pretrained_model/albert_zh_xxlarge_google_pt'
-# PATH_MODEL_BERT = '/Users/lixiang/Documents/nlp_data/pretrained_model/roberta_zh_large_bt_pt'
-# PATH_MODEL_BERT = '/Users/lixiang/Documents/nlp_data/pretrained_model/bert_zh_wwm_hit_pt'
+# PATH_MODEL_BERT = '/Users/lixiang/Documents/nlp_data/pretrained_model/roberta_wwm_ext_zh_hit_pt'
 
 
 MAX_LEN = 128
@@ -177,6 +177,9 @@ def train_clf(model, device, dataloader, epoch):
     # 存储每一个batch的loss
     loss_collect = []
 
+    def layer_usage(hidden_states, layer_no=None, pooling_stgy=None, last_4_layers=None):
+        pass
+
     for epoch in range(epoch):
         for step, batch_data in enumerate(dataloader):
             # 取出4个tensor
@@ -192,25 +195,38 @@ def train_clf(model, device, dataloader, epoch):
                             token_type_ids=batch_seq_ids,
                             labels=batch_labels)
 
-            # print(outputs[2].shape)
-            # hidden_states = outputs[2]   # 25 tensors
+            _loss, _logits, hidden_states = outputs[:3]
+            loss = _loss
 
-            # torch.Size([batch_size, max_len, 1024 * 4])
-            # pooled_output = torch.cat(tuple([hidden_states[i] for i in [-4, -3, -2, -1]]), dim=-1)
+            # concat, torch.Size([batch_size, max_len, 768 * 4]), 每个序列中，每个token，有768*4 size的tensor
+            # hidden_output = torch.cat(tuple([hidden_states[i] for i in [-4, -3, -2, -1]]), dim=-1)
 
-            loss, logits = outputs[:2]
+            # last_4_hidden_state_list = hidden_states[-5:-1]
+            # list to tensor
+            # last_4_hidden_state = torch.stack(last_4_hidden_state_list, dim=1)  # torch.Size([bz, 4, max_len, 768])
+            # hidden_output = torch.mean(last_4_hidden_state, dim=1)
+            # hidden_output = torch.sum(last_4_hidden_state, dim=1)
 
-            # print(logits)
-            # logits = logits.softmax(dim=1)
-            # loss_function = CrossEntropyLoss()
-            # loss = loss_function(logits, batch_labels)
+            # the second-to-last hidden_state
+            # hidden_output = hidden_states[-2]
+
+            # get CLS token feature, torch.Size([batch_size, x ])
+            # cls_out = hidden_output[:, 0, :]
+            # dropout_output = model.dropout(cls_out)
+            # logits = model.classifier(dropout_output)
+
+            # classifier = nn.Linear(768*4, model.num_labels)
+            # classifier.to(device)
+            # logits = classifier(dropout_output)
+
+            # loss_fct = CrossEntropyLoss()
+            # loss = loss_fct(logits.view(-1, model.num_labels), batch_labels.view(-1))
 
             # loss scaling，代替loss.backward()
             # with amp.scaled_loss(loss, optimizer) as scaled_loss:
             #     scaled_loss.backward()
 
             loss.backward()
-
             # loss_collect.append(loss.item())
 
             print('Epoch: ', epoch, '| Step: ', step, '| loss: ', loss.item())
@@ -298,6 +314,7 @@ if __name__ == '__main__':
     df[COL_CLS] = df[COL_CLS].astype(int)
 
     # df = df.head()
+
     df, col_txt = feature_styg(df, COL_ST1, COL_ST2)
     model_processor = ModelProcessor(path=PATH_MODEL_BERT, device=DEVICE)
 
