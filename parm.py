@@ -4,6 +4,7 @@ import os
 PATH_PJ_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 PATH_DATA = os.path.join(PATH_PJ_ROOT, 'data')
+PATH_DATA_TNEWS = os.path.join(PATH_DATA, 'tnews_public')
 PATH_DATA_RAW = os.path.join(PATH_DATA, 'afqmc_public')
 PATH_DATA_PRE = os.path.join(PATH_DATA_RAW, 'preprocessed')
 

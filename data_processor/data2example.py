@@ -4,6 +4,7 @@ import csv
 import json
 import os
 from typing import List
+from parm import PATH_DATA_TNEWS
 
 
 class InputExample(object):
@@ -81,6 +82,7 @@ class TnewsProcessor(DataProcessor):
         return self._create_examples(
             self._read_json(os.path.join(data_dir, "test.json")), "test")
 
+    # according to the data, defines ids for the labels
     def get_labels(self):
         """See base class."""
         labels = []
@@ -102,6 +104,9 @@ class TnewsProcessor(DataProcessor):
                 InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
         return examples
 
+def check_len():
+    pass
+
 
 clue_tasks_num_labels = {
     'tnews': 15,
@@ -113,4 +118,4 @@ cls_data_processors = {
 
 if __name__ == '__main__':
     my_processors = cls_data_processors['tnews']()
-    print(my_processors.get_labels())
+    print(my_processors.get_dev_examples(PATH_DATA_TNEWS))
