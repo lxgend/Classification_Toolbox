@@ -138,3 +138,6 @@ tmp/
 
 # pytorch model
 *.pt
+
+.DS_Store
+.git/
