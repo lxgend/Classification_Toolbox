@@ -4,6 +4,9 @@ import csv
 import json
 import os
 from typing import List
+
+import numpy as np
+
 from parm import PATH_DATA_TNEWS
 
 
@@ -55,7 +58,7 @@ class DataProcessor(object):
 
     @classmethod
     def _read_json(cls, input_file):
-        """Reads a json list file."""
+        """Reads a json list file, store in a list."""
         with open(input_file, "r") as f:
             reader = f.readlines()
             lines = []
@@ -69,8 +72,11 @@ class TnewsProcessor(DataProcessor):
 
     def get_train_examples(self, data_dir) -> List[InputExample]:
         """See base class."""
-        return self._create_examples(
+        result = self._create_examples(
             self._read_json(os.path.join(data_dir, "train.json")), "train")
+        result = result[:32]
+
+        return result
 
     def get_dev_examples(self, data_dir) -> List[InputExample]:
         """See base class."""
@@ -104,18 +110,24 @@ class TnewsProcessor(DataProcessor):
                 InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
         return examples
 
-def check_len():
-    pass
+    def get_max_length(self, data_dir):
 
+        examples = self.get_train_examples(data_dir)
+        all_lens = np.array([])
+        for txt in examples:
+            all_lens = np.append(all_lens, len(txt.text_a))
+        all_lens = np.sort(all_lens)
+        max_len = np.percentile(all_lens, 95)  # 95%分位数
+        max_len = int(max_len) + 10
 
-clue_tasks_num_labels = {
-    'tnews': 15,
-}
+        return max_len
+
 
 cls_data_processors = {
     'tnews': TnewsProcessor,
 }
 
 if __name__ == '__main__':
-    my_processors = cls_data_processors['tnews']()
-    print(my_processors.get_dev_examples(PATH_DATA_TNEWS))
+    processor = cls_data_processors['tnews']()
+
+    processor.get_max_length(PATH_DATA_TNEWS)
