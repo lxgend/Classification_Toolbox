@@ -1,6 +1,7 @@
 # coding=utf-8
 '''example → feature →  tensor dataset'''
 import logging
+import os
 from typing import List
 
 import torch
@@ -132,34 +133,47 @@ def convert_examples_to_features(examples,
     return features
 
 
-def load_and_cache_examples(args, tokenizer, processor, data_type='train', task=None):
+def load_and_cache_examples(args, tokenizer, processor, data_type='train'):
     logger.info("Creating features from dataset file at %s", args.data_dir)
     label_list = processor.get_labels()
 
-    if data_type == 'train':
-        examples = processor.get_train_examples(args.data_dir)
-    elif data_type == 'dev':
-        examples = processor.get_dev_examples(args.data_dir)
+    # filename
+    cached_features_file = os.path.join(args.data_dir, '{}_{}_{}.cache'.format(
+        data_type,
+        str(args.max_seq_length),
+        str(args.task_name)))
+
+    if os.path.exists(cached_features_file):
+        logger.info("Loading features from cached file %s", cached_features_file)
+        features = torch.load(cached_features_file)
     else:
-        examples = processor.get_test_examples(args.data_dir)
 
-    max_length = processor.get_max_length(args.data_dir)
+        if data_type == 'train':
+            examples = processor.get_train_examples(args.data_dir)
+        elif data_type == 'dev':
+            examples = processor.get_dev_examples(args.data_dir)
+        else:
+            examples = processor.get_test_examples(args.data_dir)
 
-    # features = convert_examples_to_features(examples,
-    #                                         tokenizer,
-    #                                         label_list=label_list,
-    #                                         max_length=max_length,
-    #                                         pad_on_left=bool(args.model_type in ['xlnet']),
-    #                                         # pad on the left for xlnet
-    #                                         pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
-    #                                         pad_token_segment_id=4 if args.model_type in ['xlnet'] else 0,
-    #                                         )
+        max_length = processor.get_max_length(args.data_dir)
 
-    features = convert_examples_to_features(examples,
-                                            tokenizer,
-                                            label_list=label_list,
-                                            max_length=max_length,
-                                            )
+        # features = convert_examples_to_features(examples,
+        #                                         tokenizer,
+        #                                         label_list=label_list,
+        #                                         max_length=max_length,
+        #                                         pad_on_left=bool(args.model_type in ['xlnet']),
+        #                                         # pad on the left for xlnet
+        #                                         pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
+        #                                         pad_token_segment_id=4 if args.model_type in ['xlnet'] else 0,
+        #                                         )
+
+        features = convert_examples_to_features(examples,
+                                                tokenizer,
+                                                label_list=label_list,
+                                                max_length=max_length,
+                                                )
+        logger.info("Saving features into cached file %s", cached_features_file)
+        torch.save(features, cached_features_file)
 
     # Convert to Tensors and build dataset
     all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)

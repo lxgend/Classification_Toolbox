@@ -191,7 +191,6 @@ def main(args):
 class Args(object):
     def __init__(self):
         self.task_name = 'tnews'
-        # self.model_dir = '/Users/lixiang/Documents/nlp_data/pretrained_model/roberta_wwm_ext_zh_hit_pt'
         self.data_dir = os.path.join(*[os.path.dirname(os.path.abspath(__file__)), 'data', 'tnews_public'])
         self.overwrite_cache = 1
         self.local_rank = 0
@@ -201,13 +200,13 @@ class Args(object):
         self.max_seq_length = 55
         self.model_type = 'bert'
 
-        self.do_train = 0
+        self.do_train = 1
         self.per_gpu_train_batch_size = 16
         self.num_train_epochs = 3
         self.max_steps = -1
         self.gradient_accumulation_steps = 1
 
-        self.do_eval = 1
+        self.do_eval = 0
         self.eval_batch_size = 16
 
         self.do_test = 0

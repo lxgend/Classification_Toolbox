@@ -135,6 +135,7 @@ dmypy.json
 data/
 tmp/
 *.txt
+*.cache
 
 # pytorch model
 *.pt
