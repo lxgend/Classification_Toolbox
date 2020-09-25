@@ -88,10 +88,11 @@ def evaluate(args, eval_dataset, model):
                             token_type_ids=batch_segment_ids,
                             labels=batch_label_ids)
 
-            # logits: (batch_size, max_len, num_labels)
+            # logits: (batch_size, num_labels)
             loss, logits = outputs[:2]
-
-            predictions = logits.softmax(dim=1).argmax(dim=1)
+            # softmax, 最里层dim归一化(num_labels层), shape不变
+            # argmax, 最里层dim取最大值下标(num_labels层),得到每个example对应的pred label, (batch_size)
+            predictions = logits.softmax(dim=-1).argmax(dim=-1)
 
             pred_labels.append(predictions.detach().cpu().numpy())
             true_labels.append(batch_label_ids.detach().cpu().numpy())
@@ -145,7 +146,6 @@ def main(args):
     args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     cls_data_processor = cls_data_processors[args.task_name]()
-
     label_list = cls_data_processor.get_labels()
 
     num_labels = len(label_list)
@@ -195,18 +195,16 @@ class Args(object):
         self.overwrite_cache = 1
         self.local_rank = 0
         self.n_gpu = torch.cuda.device_count()
-        self.train_max_seq_length = 55
-        self.eval_max_seq_length = 55
-        self.max_seq_length = 55
+        self.max_seq_length = 42
         self.model_type = 'bert'
 
         self.do_train = 1
         self.per_gpu_train_batch_size = 16
-        self.num_train_epochs = 3
+        self.num_train_epochs = 1
         self.max_steps = -1
         self.gradient_accumulation_steps = 1
 
-        self.do_eval = 0
+        self.do_eval = 1
         self.eval_batch_size = 16
 
         self.do_test = 0

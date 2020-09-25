@@ -7,9 +7,6 @@ from typing import List
 
 import numpy as np
 
-from parm import PATH_DATA_TNEWS
-
-
 class InputExample(object):
     """
     A single training/test example for simple sequence classification.
@@ -74,8 +71,7 @@ class TnewsProcessor(DataProcessor):
         """See base class."""
         result = self._create_examples(
             self._read_json(os.path.join(data_dir, "train.json")), "train")
-        result = result[:32]
-
+        # result = result[:32]
         return result
 
     def get_dev_examples(self, data_dir) -> List[InputExample]:
@@ -129,5 +125,5 @@ cls_data_processors = {
 
 if __name__ == '__main__':
     processor = cls_data_processors['tnews']()
-
-    processor.get_max_length(PATH_DATA_TNEWS)
+    # from parm import PATH_DATA_TNEWS
+    # processor.get_max_length(PATH_DATA_TNEWS)

@@ -60,17 +60,11 @@ def xlnet_collate_fn(batch):
 
 def convert_examples_to_features(examples,
                                  tokenizer,
-                                 max_length=42,
-                                 task=None,
-                                 label_list=None) -> List[InputFeatures]:
-    if task is not None:
-        processor = cls_data_processors[task]()
-        if label_list is None:
-            label_list = processor.get_labels()
-            logger.info("Using label list %s for task %s" % (label_list, task))
-        # if output_mode is None:
-        #     output_mode = cls_data_processors[task]
-        #     logger.info("Using output mode %s for task %s" % (output_mode, task))
+                                 max_length,
+                                 label_list) -> List[InputFeatures]:
+    # if output_mode is None:
+    #     output_mode = cls_data_processors[task]
+    #     logger.info("Using output mode %s for task %s" % (output_mode, task))
 
     label_map = {label: i for i, label in enumerate(label_list)}
 
@@ -93,6 +87,7 @@ def convert_examples_to_features(examples,
         input_ids = inputs['input_ids']
         token_type_ids = inputs['token_type_ids']
         attention_mask = inputs['attention_mask']
+        label = label_map[example.label]
 
         # The mask has 1 for real tokens and 0 for padding tokens. Only real
         # tokens are attended to.
@@ -114,8 +109,6 @@ def convert_examples_to_features(examples,
                                                                                             max_length)
         assert len(token_type_ids) == max_length, "Error with input length {} vs {}".format(len(token_type_ids),
                                                                                             max_length)
-
-        label = label_map[example.label]
 
         if ex_index < 5:
             logger.info("*** Example ***")
