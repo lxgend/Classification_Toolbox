@@ -7,6 +7,7 @@ from typing import List
 
 import numpy as np
 
+
 class InputExample(object):
     """
     A single training/test example for simple sequence classification.
@@ -106,8 +107,7 @@ class TnewsProcessor(DataProcessor):
                 InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
         return examples
 
-    def get_max_length(self, data_dir):
-
+    def max_length(self, data_dir):
         examples = self.get_train_examples(data_dir)
         all_lens = np.array([])
         for txt in examples:
@@ -115,15 +115,18 @@ class TnewsProcessor(DataProcessor):
         all_lens = np.sort(all_lens)
         max_len = np.percentile(all_lens, 95)  # 95%分位数
         max_len = int(max_len) + 10
-
+        # 42
         return max_len
 
+    def get_max_length(self):
+        return 42
 
-cls_data_processors = {
+
+clf_data_processors = {
     'tnews': TnewsProcessor,
 }
 
 if __name__ == '__main__':
-    processor = cls_data_processors['tnews']()
+    processor = clf_data_processors['tnews']()
     # from parm import PATH_DATA_TNEWS
-    # processor.get_max_length(PATH_DATA_TNEWS)
+    # print(processor.get_max_length(PATH_DATA_TNEWS))

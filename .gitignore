@@ -132,7 +132,7 @@ dmypy.json
 
 
 # data
-data/
+data/tnews_public/*.json
 tmp/
 *.txt
 *.cache

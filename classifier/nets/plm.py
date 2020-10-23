@@ -13,6 +13,16 @@ PATH_XLNET = '/Users/lixiang/Documents/nlp_data/pretrained_model/xlnet_base_zh_h
 # robert, albert, xlnet, ernie
 MODEL_CLASSES = {
     'albert': (AlbertForSequenceClassification, BertTokenizer, PATH_ALBERT),  # 中文模型使用此Tokenizer
-    'bert': (BertForSequenceClassification, BertTokenizer, PATH_BERT),
+    'roberta': (BertForSequenceClassification, BertTokenizer, PATH_BERT),
     'xlnet': (XLNetForSequenceClassification, XLNetTokenizer, PATH_XLNET),
 }
+
+if __name__ == '__main__':
+    from transformers import BertModel
+    model = BertModel.from_pretrained(PATH_BERT)
+    print(model)
+    from transformers import RobertaModel
+
+
+
+

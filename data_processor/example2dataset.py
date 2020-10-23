@@ -5,9 +5,8 @@ import os
 from typing import List
 
 import torch
+import torch.distributed
 from torch.utils.data import TensorDataset
-
-from data_processor.data2example import cls_data_processors
 
 logger = logging.getLogger(__name__)
 
@@ -61,12 +60,13 @@ def xlnet_collate_fn(batch):
 def convert_examples_to_features(examples,
                                  tokenizer,
                                  max_length,
-                                 label_list) -> List[InputFeatures]:
+                                 task,
+                                 label_list=None) -> List[InputFeatures]:
     # if output_mode is None:
     #     output_mode = cls_data_processors[task]
     #     logger.info("Using output mode %s for task %s" % (output_mode, task))
 
-    label_map = {label: i for i, label in enumerate(label_list)}
+    # label2id = {label: i for i, label in enumerate(label_list)}
 
     features = []
     for (ex_index, example) in enumerate(examples):
@@ -87,7 +87,7 @@ def convert_examples_to_features(examples,
         input_ids = inputs['input_ids']
         token_type_ids = inputs['token_type_ids']
         attention_mask = inputs['attention_mask']
-        label = label_map[example.label]
+        label = int(example.label)
 
         # The mask has 1 for real tokens and 0 for padding tokens. Only real
         # tokens are attended to.
@@ -127,6 +127,9 @@ def convert_examples_to_features(examples,
 
 
 def load_and_cache_examples(args, tokenizer, processor, data_type='train'):
+    if args.local_rank not in [-1, 0] and args.do_eval == 0:
+        torch.distributed.barrier()
+
     logger.info("Creating features from dataset file at %s", args.data_dir)
     label_list = processor.get_labels()
 
@@ -136,7 +139,7 @@ def load_and_cache_examples(args, tokenizer, processor, data_type='train'):
         str(args.max_seq_length),
         str(args.task_name)))
 
-    if os.path.exists(cached_features_file):
+    if os.path.exists(cached_features_file) and args.overwrite_cache == 0:
         logger.info("Loading features from cached file %s", cached_features_file)
         features = torch.load(cached_features_file)
     else:
@@ -148,7 +151,7 @@ def load_and_cache_examples(args, tokenizer, processor, data_type='train'):
         else:
             examples = processor.get_test_examples(args.data_dir)
 
-        max_length = processor.get_max_length(args.data_dir)
+        max_length = processor.get_max_length()
 
         # features = convert_examples_to_features(examples,
         #                                         tokenizer,
@@ -164,9 +167,16 @@ def load_and_cache_examples(args, tokenizer, processor, data_type='train'):
                                                 tokenizer,
                                                 label_list=label_list,
                                                 max_length=max_length,
+                                                task=args.task_name
                                                 )
         logger.info("Saving features into cached file %s", cached_features_file)
-        torch.save(features, cached_features_file)
+
+        if args.local_rank in [-1, 0]:
+            logger.info("Saving features into cached file %s", cached_features_file)
+            torch.save(features, cached_features_file)
+
+    if args.local_rank == 0:
+        torch.distributed.barrier()
 
     # Convert to Tensors and build dataset
     all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
