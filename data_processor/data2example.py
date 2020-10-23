@@ -72,7 +72,7 @@ class TnewsProcessor(DataProcessor):
         """See base class."""
         result = self._create_examples(
             self._read_json(os.path.join(data_dir, "train.json")), "train")
-        # result = result[:32]
+        result = result[:32]
         return result
 
     def get_dev_examples(self, data_dir) -> List[InputExample]:

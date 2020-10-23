@@ -15,7 +15,7 @@ from tqdm import tqdm
 from classifier.nets.plm import MODEL_CLASSES
 from data_processor.data2example import clf_data_processors
 from data_processor.example2dataset import load_and_cache_examples
-
+from parm import *
 
 def train(args, train_dataset, model):
     args.train_batch_size = args.per_gpu_train_batch_size
@@ -232,7 +232,7 @@ def main(args):
 class Args(object):
     def __init__(self):
         self.task_name = 'tnews'
-        self.data_dir = os.path.join(*[os.path.dirname(os.path.abspath(__file__)), 'data', 'tnews_public'])
+        self.data_dir = PATH_DATA_TNEWS
         self.output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
         self.overwrite_cache = 1
         self.max_seq_length = 42
