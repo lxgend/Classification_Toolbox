@@ -134,6 +134,7 @@ dmypy.json
 # data
 data/tnews_public/*.json
 tmp/
+/logs
 *.txt
 *.cache
 
