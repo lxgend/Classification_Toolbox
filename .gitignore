@@ -139,6 +139,10 @@ tmp/
 
 # pytorch model
 *.pt
+*.pth
+*.mar
 
 .DS_Store
 .git/
+*.bin
+classifier/albert

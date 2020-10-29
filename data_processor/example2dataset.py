@@ -66,7 +66,7 @@ def convert_examples_to_features(examples,
     #     output_mode = cls_data_processors[task]
     #     logger.info("Using output mode %s for task %s" % (output_mode, task))
 
-    # label2id = {label: i for i, label in enumerate(label_list)}
+    label2id = {label: i for i, label in enumerate(label_list)}
 
     features = []
     for (ex_index, example) in enumerate(examples):
@@ -87,7 +87,7 @@ def convert_examples_to_features(examples,
         input_ids = inputs['input_ids']
         token_type_ids = inputs['token_type_ids']
         attention_mask = inputs['attention_mask']
-        label = int(example.label)
+        label = label2id[example.label]
 
         # The mask has 1 for real tokens and 0 for padding tokens. Only real
         # tokens are attended to.

@@ -1,10 +1,10 @@
 # coding=utf-8
-import json
-import os
 
 import numpy as np
 import torch
 import torch.distributed
+from torch.cuda.amp import GradScaler
+from torch.cuda.amp import autocast
 from torch.optim import SGD
 from torch.utils.data import DataLoader
 from torch.utils.data import RandomSampler
@@ -16,6 +16,7 @@ from classifier.nets.plm import MODEL_CLASSES
 from data_processor.data2example import clf_data_processors
 from data_processor.example2dataset import load_and_cache_examples
 from parm import *
+
 
 def train(args, train_dataset, model):
     args.train_batch_size = args.per_gpu_train_batch_size
@@ -63,6 +64,7 @@ def train(args, train_dataset, model):
                 loss = loss / args.gradient_accumulation_steps
 
             loss.backward()
+            # gradient clipping
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
             optimizer.step()
             if step % 5 == 0:
@@ -70,18 +72,15 @@ def train(args, train_dataset, model):
 
             global_step += 1
 
+    # traced_model = torch.jit.trace(model,
+    #                                [batch_input_ids,
+    #                                 batch_input_mask,
+    #                                 batch_segment_ids])
+    # torch.jit.save(traced_model, "traced_bert.pt")
+
     # torch.save(model.state_dict(), 'cls_fine_tuned.pt')
     if 'cuda' in str(args.device):
         torch.cuda.empty_cache()
-
-    if (args.local_rank == -1 or torch.distributed.get_rank() == 0):
-        model_to_save = model.module if hasattr(model,
-                                                'module') else model  # Take care of distributed/parallel training
-        model_to_save.save_pretrained(args.output_dir)
-        # tokenizer.save_pretrained(args.output_dir)
-
-        # Good practice: save your training arguments together with the trained model
-        torch.save(args, os.path.join(args.output_dir, 'training_args.bin'))
 
     return global_step
 
@@ -125,8 +124,6 @@ def predict(args, test_dataset, model):
 
     results = []
 
-    # from data_processor.data_example import get_entity
-
     with torch.no_grad():
         for step, batch_data in enumerate(tqdm(test_dataloader, desc='test')):
             model.eval()
@@ -134,19 +131,25 @@ def predict(args, test_dataset, model):
             batch_data = tuple(t.to(args.device) for t in batch_data)
             batch_input_ids, batch_input_mask, batch_segment_ids, batch_label_ids = batch_data
 
-            outputs = model(input_ids=batch_input_ids,
-                            attention_mask=batch_input_mask,
-                            token_type_ids=batch_segment_ids,
-                            labels=batch_label_ids)
+            # input_this = torch.tensor([batch_input_ids, batch_segment_ids, batch_input_mask])
+            input_this = (batch_input_ids, batch_segment_ids, batch_input_mask)
+
+            # outputs = model(batch_input_ids,
+            #                 batch_segment_ids,
+            #                 batch_input_mask,
+            #                 )
+
+            outputs = model(batch_input_ids
+                            )
 
             # logits: (batch_size, max_len, num_labels)
-            loss, logits = outputs[:2]
+            logits = outputs[0]
 
-            # softmax, 最里层dim归一化, shape不变, (batch_size, max_len, num_labels)
-            # argmax, 最里层dim取最大值,得到 index对应label, (batch_size, max_len)
             predictions = logits.softmax(dim=1).argmax(dim=1)
 
             predictions = predictions.detach().cpu().numpy().tolist()
+
+            print(predictions)
             # predictions = predictions[0][1:-1]  # [CLS]XXXX[SEP]
             #
             # label_entities = get_entity(predictions, args.id2label)
@@ -156,9 +159,9 @@ def predict(args, test_dataset, model):
             # d['entities'] = label_entities
             # results.append(d)
 
-    with open('predict_tmp.json', 'w') as writer:
-        for d in results:
-            writer.write(json.dumps(d) + '\n')
+    # with open('predict_tmp.json', 'w') as writer:
+    #     for d in results:
+    #         writer.write(json.dumps(d) + '\n')
 
 
 def main(args):
@@ -190,8 +193,11 @@ def main(args):
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
     model_class, tokenizer_class, model_path = MODEL_CLASSES[args.model_type]
+
+    print(model_path)
+
     tokenizer = tokenizer_class.from_pretrained(model_path)
-    model = model_class.from_pretrained(model_path, num_labels=num_labels)
+    model = model_class.from_pretrained(model_path, num_labels=num_labels, torchscript=True)
 
     if args.local_rank == 0:
         torch.distributed.barrier()
@@ -206,34 +212,87 @@ def main(args):
         global_step = train(args, train_dataset, model)
         print("global_step = %s" % global_step)
 
+        # if (args.local_rank == -1 or torch.distributed.get_rank() == 0):
+        #     # fine_tuned model
+        #     model_to_save = model.module if hasattr(model,
+        #                                             'module') else model  # Take care of distributed/parallel training
+        #     model_to_save.save_pretrained(args.output_dir)
+        #     # tokenizer.save_pretrained(args.output_dir)
+        #     # Good practice: save training arguments
+        #     torch.save(args, os.path.join(args.output_dir, 'finetuned/training_args.bin'))
+
+        ss = '凌云研发的国产两轮电动车怎么样，有什么惊喜？'
+        inputs = tokenizer.encode_plus(text=ss,
+                                       add_special_tokens=True,
+                                       max_length=args.max_seq_length,
+                                       padding='max_length',
+                                       truncation=True,
+                                       return_token_type_ids=True,
+                                       return_attention_mask=True,
+                                       return_tensors='pt')
+
+        input_ids = inputs["input_ids"]
+        # token_type_ids = inputs["token_type_ids"]
+        # attention_mask = inputs["attention_mask"]
+
+        # traced_model = torch.jit.trace(model.cpu().eval(), (input_ids, token_type_ids, attention_mask))
+        traced_model = torch.jit.trace(model.cpu().eval(), (input_ids))
+        torch.jit.save(traced_model, "traced_bert.pt")
+
     if args.do_eval:
         print('evaluate')
 
         eval_dataset = load_and_cache_examples(args, tokenizer, clf_data_processor, data_type='dev')
 
-        # Load a trained model and vocabulary that you have fine-tuned
-        model = model_class.from_pretrained(args.output_dir)
-        # tokenizer = tokenizer_class.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
-        model.to(args.device)
-
-        # model.load_state_dict(torch.load('cls_fine_tuned.pt', map_location=lambda storage, loc: storage))
+        # model = model_class.from_pretrained(args.output_dir)
         # model.to(args.device)
-        evaluate(args, eval_dataset, model)
+
+        loaded_model = torch.jit.load("traced_bert.pth")
+        loaded_model.eval()
+        # checkpoints = [args.output_dir]
+        #
+        # import glob
+        # from transformers import WEIGHTS_NAME
+        # checkpoints = list(
+        #     os.path.dirname(c) for c in sorted(glob.glob(args.output_dir + '/**/' + WEIGHTS_NAME, recursive=True)))
+        # print(checkpoints)
+
+        # for checkpoint in checkpoints:
+        #     print(checkpoint)
+        #
+        #     global_step = checkpoint.split('-')[-1] if len(checkpoints) > 1 else ""
+        #     prefix = checkpoint.split('/')[-1] if checkpoint.find('checkpoint') != -1 else ""
+        #
+        #     print(global_step)
+        #     print(prefix)
+
+        # # Load a trained model and vocabulary that you have fine-tuned
+        # model = model_class.from_pretrained(args.output_dir)
+        # # tokenizer = tokenizer_class.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
+        # model.to(args.device)
+        #
+        # # model.load_state_dict(torch.load('cls_fine_tuned.pt', map_location=lambda storage, loc: storage))
+        # # model.to(args.device)
+        evaluate(args, eval_dataset, loaded_model)
 
     if args.do_test:
         print('test')
         test_dataset = load_and_cache_examples(args, tokenizer, clf_data_processor, data_type='test')
 
-        model.load_state_dict(torch.load('cls_fine_tuned.pt', map_location=lambda storage, loc: storage))
-        model.to(args.device)
-        predict(args, test_dataset, model)
+        loaded_model = torch.jit.load("traced_bert.pt")
+        # loaded_model.to(args.device)
+        loaded_model.eval()
+
+        # model.load_state_dict(torch.load('clf_fine_tuned.pt', map_location=lambda storage, loc: storage))
+
+        predict(args, test_dataset, loaded_model)
 
 
 class Args(object):
     def __init__(self):
         self.task_name = 'tnews'
         self.data_dir = PATH_DATA_TNEWS
-        self.output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+        self.output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'finetuned')
         self.overwrite_cache = 1
         self.max_seq_length = 42
         self.model_type = 'albert'
@@ -242,7 +301,7 @@ class Args(object):
         self.use_cpu = 0
         self.n_gpu = torch.cuda.device_count()
 
-        self.do_train = 1
+        self.do_train = 0
         self.per_gpu_train_batch_size = 16
         self.num_train_epochs = 1
         self.max_steps = -1
@@ -255,7 +314,7 @@ class Args(object):
         self.do_eval = 0
         self.eval_batch_size = 16
 
-        self.do_test = 0
+        self.do_test = 1
         self.test_batch_size = 1
 
 
