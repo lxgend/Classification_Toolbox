@@ -1,8 +1,0 @@
-{
- "model_name":"albert",
- "mode":"sequence_classification",
- "do_lower_case":"True",
- "num_labels":"15",
- "save_mode":"torchscript",
- "max_length":"42"
-}

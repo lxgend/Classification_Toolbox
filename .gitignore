@@ -147,3 +147,4 @@ tmp/
 .git/
 *.bin
 classifier/albert
+*.vec.gz
