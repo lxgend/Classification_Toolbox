@@ -149,3 +149,5 @@ tmp/
 *.bin
 classifier/albert
 *.vec.gz
+*.vec
+*.pkl

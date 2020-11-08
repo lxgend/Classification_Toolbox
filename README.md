@@ -1,9 +1,15 @@
 # Classification_Toolbox
 
+| MODEL            | Task    |    F1    |
+| ---------------- | ------- |--------- |
+| **FastText**     | TNEWS   |   0.63   | 
+
+
+
 ## Todo
 - [x] BERT
 - [ ] XLNet
-- [ ] FastText
+- [x] FastText
 - [ ] TextCNN
 - [ ] lgbm
 - [ ] GCN
