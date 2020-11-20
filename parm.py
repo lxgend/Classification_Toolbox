@@ -11,7 +11,7 @@ PATH_DATA_TNEWS_PRE = os.path.join(PATH_DATA_TNEWS, 'preprocessed')
 
 PATH_MD_TMP = os.path.join(*[PATH_PJ_ROOT, 'wv_processor', 'modelfile'])
 
-PATH_MD_FT = os.path.join(*[PATH_PJ_ROOT, 'classifier', 'fasttext_zh'])
+PATH_MD_FT = os.path.join(*[PATH_PJ_ROOT, 'classifier', 'vec_processor'])
 
 
 # PATH_DATA_RAW = os.path.join(PATH_DATA, 'afqmc_public')

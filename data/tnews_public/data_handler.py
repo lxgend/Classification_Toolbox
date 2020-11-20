@@ -43,7 +43,6 @@ def data_norm_for_wv(filename):
     # keep original order
     df['token'] = df['sentence'].apply(lambda x: sorted(set(jieba.cut(x)).difference(set(stop_words)), key=x.index))
     df['token'] = df['keywords'] + df['token']
-    df['token'] = df['keywords'] + df['token']
     df = df[df['token'].notnull()]
 
     df['token'] = df['token'].apply(lambda x: ' '.join(x))

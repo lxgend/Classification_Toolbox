@@ -5,7 +5,7 @@ import json
 from typing import List
 
 import numpy as np
-
+import pandas as pd
 from parm import *
 
 
@@ -76,52 +76,6 @@ class DataProcessor(object):
                 lines.append(json.loads(line.strip()))
             return lines
 
-
-class TnewsProcessor(DataProcessor):
-    """Processor for the TNEWS data set (CLUE version)."""
-
-    def get_train_examples(self, data_dir) -> List[InputExample]:
-        """See base class."""
-        result = self._create_examples(
-            self._read_json(os.path.join(data_dir, "train.json")), "train")
-        result = result[:32]
-        return result
-
-    def get_dev_examples(self, data_dir) -> List[InputExample]:
-        """See base class."""
-        result = self._create_examples(
-            self._read_json(os.path.join(data_dir, "dev.json")), "dev")
-
-        result = result[:64]
-        return result
-
-    def get_test_examples(self, data_dir) -> List[InputExample]:
-        """See base class."""
-        return self._create_examples(
-            self._read_json(os.path.join(data_dir, "test.json")), "test")
-
-    # according to the data, defines ids for the labels
-    def get_labels(self):
-        """See base class."""
-        labels = []
-        for i in range(17):
-            if i == 5 or i == 11:
-                continue
-            labels.append(str(100 + i))
-        return labels
-
-    def _create_examples(self, lines, set_type):
-        """Creates examples for the training and dev sets."""
-        examples = []
-        for (i, line) in enumerate(lines):
-            guid = "%s-%s" % (set_type, i)
-            text_a = line['sentence']
-            text_b = None
-            label = str(line['label']) if set_type != 'test' else "100"
-            examples.append(
-                InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
-        return examples
-
     def max_length(self, data_dir):
         examples = self.get_train_examples(data_dir)
         all_lens = np.array([])
@@ -133,11 +87,7 @@ class TnewsProcessor(DataProcessor):
         # 42
         return max_len
 
-    def get_max_length(self):
-        return 42
-
-
-class TnewsProcessor2(DataProcessor):
+class TnewsProcessor(DataProcessor):
     """Processor for the TNEWS data set (CLUE version)."""
 
     def __init__(self, data_dir):
@@ -183,10 +133,51 @@ class TnewsProcessor2(DataProcessor):
     def get_max_length(self):
         return 42
 
+class TnewsProcessor_vec(DataProcessor):
+    """Processor for the TNEWS data set (CLUE version)."""
+
+    def __init__(self, data_dir):
+        self.data_dir = data_dir
+
+    def get_train_examples(self) -> List[InputExample]:
+        """See base class."""
+        result = self._create_examples(
+            self._read_csv(os.path.join(self.data_dir, "train.csv")))
+        # result = result[:150]
+        return result
+
+    def get_dev_examples(self) -> List[InputExample]:
+        """See base class."""
+        result = self._create_examples(
+            self._read_csv(os.path.join(self.data_dir, "dev.csv")))
+        # result = result[:64]
+        return result
+
+    def get_test_examples(self) -> List[InputExample]:
+        """See base class."""
+        return self._create_examples(
+            self._read_csv(os.path.join(self.data_dir, "test.csv")))
+
+    @classmethod
+    def _read_csv(cls, input_file):
+        df = pd.read_csv(input_file, dtype=object, encoding='utf-8')
+        return df
+
+    # according to the data, defines ids for the labels
+    def get_labels(self):
+        with open(os.path.join(self.data_dir, 'labels.json'), 'r', encoding='utf-8') as f:
+            labels = json.load(f)
+        return labels
+
+    def _create_examples(self, df):
+        return df
+
+    def get_max_length(self):
+        return 42
 
 clf_data_processors = {
     'tnews': TnewsProcessor,
-    'tnews2': TnewsProcessor2,
+    'tnews_vec': TnewsProcessor_vec,
 }
 
 if __name__ == '__main__':

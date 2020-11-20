@@ -134,8 +134,9 @@ def load_and_cache_examples(args, tokenizer, processor, data_type='train'):
     label_list = processor.get_labels()
 
     # filename
-    cached_features_file = os.path.join(args.data_dir, '{}_{}_{}.cache'.format(
+    cached_features_file = os.path.join(args.data_dir, '{}_{}_{}_{}.cache'.format(
         data_type,
+        str(args.model_type),
         str(args.max_seq_length),
         str(args.task_name)))
 

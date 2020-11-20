@@ -20,7 +20,6 @@ MODEL_CLASSES = {
     # 'xlnet': (XLNetForSequenceClassification, XLNetTokenizer, PATH_XLNET),
 }
 
-
 if __name__ == '__main__':
     from transformers import BertModel
     model = BertModel.from_pretrained(PATH_BERT)
