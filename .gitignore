@@ -151,5 +151,6 @@ classifier/albert
 *.vec.gz
 *.vec
 *.pkl
+*.npz
 *.npy
 *.json
