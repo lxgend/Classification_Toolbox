@@ -1,5 +1,5 @@
 # coding=utf-8
-
+from tqdm import tqdm
 import jieba.analyse
 import numpy as np
 
@@ -15,140 +15,45 @@ class InputFeatures(object):
         self.sentence_vec = sentence_vec
         self.label = label
 
-
-def get_word_vector(word, idx2word, vector_all):
-    if word in idx2word.keys():
-        iid = idx2word[word]
-    else:
-        iid = idx2word['pad']
-    wv = vector_all[str(iid)]
-    return wv
-
-
-def word2onehot(word, idx2word):
-    if word in idx2word.keys():
-        iid = idx2word[word]
-    else:
-        iid = idx2word['pad']
-    wv = vector_all[str(iid)]
-    return wv
-
-
-def embedding_table(vector_all):
-    wv = vector_all[str()]
-    print(wv.shape)
-    print(wv)
-
-    # for i in range()
-    #
-    # wv_matrix = np.vstack(wv_sup)
-    # if word in idx2word.keys():
-    #     iid = idx2word[word]
-    # else:
-    #     iid = idx2word['pad']
-    # wv = vector_all[str(iid)]
-    # return wv
-
-
 def convert_examples_to_features_df(args, examples_df):
-    WV_UNK = np.zeros(args.vec_dim, dtype=np.float32)
+    jieba.load_userdict(os.path.join(args.model_path, 'vocab_wv.txt'))
+    args.unk = np.zeros(args.vec_dim, dtype=np.float32)
+
+    def get_word_vector(word, args):
+        if word in args.word2id.keys():
+            idx = args.word2id[word]
+            wv = args.wv_model[idx]
+        else:
+            wv = args.unk
+        return wv
 
     def txt2vec(row):
-        print(row)
-        print(row[2])
-        tokens = jieba.lcut
+        tokens = jieba.lcut(row['text_a'])
 
+        wv_matrix = np.array(list(map(lambda w: get_word_vector(w, args), tokens)),
+                             dtype=np.float32)
 
-    examples_df['vec'] = examples_df.apply(txt2vec, axis=1)
+        if wv_matrix.size == 0:
+            # 叠加几个subtoken
+            wv_sup = np.broadcast_to(args.unk, (len(tokens), len(args.unk)))
+            wv_matrix = np.vstack(wv_sup)
+
+        sentence_vec = np.mean(wv_matrix, axis=0, dtype=np.float32)
+
+        if np.all(sentence_vec == 0):
+            sentence_vec = args.unk
+        return sentence_vec
+
+    tqdm.pandas(desc='mybar')
+    examples_df['vec'] = examples_df.progress_apply(txt2vec, axis=1)
 
     vecs = examples_df['vec'].values
     labels = examples_df['label'].astype(int).values
 
     return vecs, labels
 
-
-    # features = []
-    # for (ex_index, example) in enumerate(examples_df):
-    #
-    #     print(example)
-    #
-    #     tokens = jieba.lcut(example.text_a)
-    #
-    #     if args.model_type != 'fasttext':
-    #         # avoid oov
-    #         # word_no_exist = [word for word in tokens if word not in vocab]
-    #         word_exist = [word for word in tokens if word in args.wv_model.vocab]
-    #         tokens = word_exist
-    #         if not tokens:
-    #             features.append(
-    #                 InputFeatures(sentence_vec=WV_UNK, label=example.label))
-    #             continue
-    #
-    #         wv_matrix = np.array(list(map(lambda x: args.wv_model[x], tokens)), dtype=np.float32)
-    #     else:
-    #         wv_matrix = np.array(list(map(lambda x: get_word_vector(x, args.idx2word, args.wv_model), tokens)),
-    #                              dtype=np.float32)
-    #
-    #     if wv_matrix.size == 0:
-    #         # 叠加几个subtoken
-    #         wv_sup = np.broadcast_to(WV_UNK, (len(tokens), len(WV_UNK)))
-    #         wv_matrix = np.vstack(wv_sup)
-    #
-    #     sentence_vec = np.sum(wv_matrix, axis=0, dtype=np.float32)
-    #
-    #     if np.all(sentence_vec == 0):
-    #         sentence_vec = WV_UNK
-    #
-    #     features.append(
-    #         InputFeatures(sentence_vec=sentence_vec, label=example.label))
-    # return features
-
-
-def convert_examples_to_features_df2(args, examples_df):
-    WV_UNK = np.zeros(args.vec_dim, dtype=np.float32)
-
-    features = []
-    for (ex_index, example) in enumerate(examples_df):
-
-        print(example)
-
-        tokens = jieba.lcut(example.text_a)
-
-        if args.model_type != 'fasttext':
-            # avoid oov
-            # word_no_exist = [word for word in tokens if word not in vocab]
-            word_exist = [word for word in tokens if word in args.wv_model.vocab]
-            tokens = word_exist
-            if not tokens:
-                features.append(
-                    InputFeatures(sentence_vec=WV_UNK, label=example.label))
-                continue
-
-            wv_matrix = np.array(list(map(lambda x: args.wv_model[x], tokens)), dtype=np.float32)
-        else:
-            wv_matrix = np.array(list(map(lambda x: get_word_vector(x, args.idx2word, args.wv_model), tokens)),
-                                 dtype=np.float32)
-
-        if wv_matrix.size == 0:
-            # 叠加几个subtoken
-            wv_sup = np.broadcast_to(WV_UNK, (len(tokens), len(WV_UNK)))
-            wv_matrix = np.vstack(wv_sup)
-
-        sentence_vec = np.sum(wv_matrix, axis=0, dtype=np.float32)
-
-        if np.all(sentence_vec == 0):
-            sentence_vec = WV_UNK
-
-        features.append(
-            InputFeatures(sentence_vec=sentence_vec, label=example.label))
-    return features
-
-
-
-
 def load_and_cache_examples_df(args, processor, data_type='train'):
     # load wv
-
     # filename
     cached_features_file = os.path.join(args.data_dir, '{}_{}_{}.npz'.format(
         data_type,
@@ -168,7 +73,6 @@ def load_and_cache_examples_df(args, processor, data_type='train'):
             examples = processor.get_test_examples()
 
         vecs, labels = convert_examples_to_features_df(args, examples)
-
         np.savez_compressed(cached_features_file, x=vecs, y=labels)
 
     vecs = vecs.tolist()

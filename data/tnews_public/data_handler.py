@@ -3,8 +3,9 @@ import json
 import unicodedata
 
 import jieba.analyse
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 from parm import *
 
 pd.set_option('display.max_columns', None)
@@ -25,6 +26,10 @@ def get_labels():
 
 
 def data_norm_for_wv(filename):
+    from classifier.nets.wv import MODEL_FILE
+    model_path, vec_dim = MODEL_FILE['sg_tx']
+    jieba.load_userdict(os.path.join(model_path, 'vocab_wv.txt'))
+
     id2label = get_labels()
     label2id = {v: k for k, v in id2label.items()}
 
@@ -48,6 +53,7 @@ def data_norm_for_wv(filename):
     df['token'] = df['token'].apply(lambda x: ' '.join(x))
     df['token'] = df['token'].str.strip()
     df = df[df['token'] != ' ']
+    df = df[df['token'] != '']
     df = df[df['token'].notnull()]
     df = df.drop(['sentence', 'keywords'], axis=1)
 
@@ -73,16 +79,15 @@ def data_norm_for_fasttext_fmt(filename):
     np.savetxt(os.path.join(PATH_DATA_TNEWS_PRE, filename + '_ft.txt'), df.values, fmt="%s")
 
 
-
 def data_norm(file_name):
     pass
 
 
 if __name__ == '__main__':
     # print(get_labels())
-    # data_norm_for_wv('train')   # 53360
-    # data_norm_for_wv('dev')     # 10000
+    data_norm_for_wv('train')   # 53360
+    data_norm_for_wv('dev')     # 10000
     # data_norm_for_wv('test')    # 10000
 
-    data_norm_for_fasttext_fmt('train')
-    data_norm_for_fasttext_fmt('dev')
+    # data_norm_for_fasttext_fmt('train')
+    # data_norm_for_fasttext_fmt('dev')

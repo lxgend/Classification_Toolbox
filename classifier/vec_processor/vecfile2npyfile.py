@@ -76,8 +76,7 @@ if __name__ == '__main__':
     filename = '/Users/lixiang/Documents/nlp_data/pretrained_model/tx_w2v/45000-small.txt'
     path = '/Users/lixiang/Documents/Python/PycharmProjects/Workplace/Classification_Toolbox/classifier/vec_processor/vec_model/'
     # model_norm(filename, path)
+    # word2id, vector_all = load_model(path)
+    build_dict(path)
 
-    word2id, vector_all = load_model(path)
-    if '0' in word2id.keys():
-        print(word2id['0'])
     # print(vector_all['pad'])

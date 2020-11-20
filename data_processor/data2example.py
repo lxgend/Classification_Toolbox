@@ -6,6 +6,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
+
 from parm import *
 
 
@@ -87,6 +88,7 @@ class DataProcessor(object):
         # 42
         return max_len
 
+
 class TnewsProcessor(DataProcessor):
     """Processor for the TNEWS data set (CLUE version)."""
 
@@ -133,6 +135,7 @@ class TnewsProcessor(DataProcessor):
     def get_max_length(self):
         return 42
 
+
 class TnewsProcessor_vec(DataProcessor):
     """Processor for the TNEWS data set (CLUE version)."""
 
@@ -170,10 +173,12 @@ class TnewsProcessor_vec(DataProcessor):
         return labels
 
     def _create_examples(self, df):
+        df = df.rename(columns={'token': 'text_a'})
         return df
 
     def get_max_length(self):
         return 42
+
 
 clf_data_processors = {
     'tnews': TnewsProcessor,
