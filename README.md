@@ -1,12 +1,14 @@
 # Classification_Toolbox
 
-| MODEL            | Task    |    F1    |
-| ---------------- | ------- |--------- |
-| **自训练FastText**   | TNEWS   |   0.63   | 
-| **腾讯WV + lgbm**    | TNEWS   |   0.63   |
-| **腾讯WV + SVM**     | TNEWS   |   0.61   |
+TNEWS
 
-
+| Model             | Text representation   |    F1    |
+| ----------------  | -------               |--------- |
+| **FastText clf**  | 自训练FastText         |   0.63   | 
+| **lgbm**          | 自训练FastText         |   0.58   |
+| **lgbm**          | tfidf                 |   0.55   |
+| **lgbm**          | 腾讯WV                 |   0.63   |
+| **SVM**           | 腾讯WV                 |   0.61   |
 
 ## Todo
 - [x] BERT
