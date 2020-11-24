@@ -1,7 +1,7 @@
 # coding=utf-8
-from tqdm import tqdm
 import jieba.analyse
 import numpy as np
+from tqdm import tqdm
 
 from parm import *
 
@@ -15,9 +15,11 @@ class InputFeatures(object):
         self.sentence_vec = sentence_vec
         self.label = label
 
+
 def convert_examples_to_features_df(args, examples_df):
-    jieba.load_userdict(os.path.join(args.model_path, 'vocab_wv.txt'))
-    args.unk = np.zeros(args.vec_dim, dtype=np.float32)
+    if args.model_type == 'sg_tx':
+        jieba.load_userdict(os.path.join(args.model_path, 'vocab_wv.txt'))
+        args.unk = np.zeros(args.vec_dim, dtype=np.float32)
 
     def get_word_vector(word, args):
         if word in args.word2id.keys():
@@ -29,7 +31,6 @@ def convert_examples_to_features_df(args, examples_df):
 
     def txt2vec(row):
         tokens = jieba.lcut(row['text_a'])
-
         wv_matrix = np.array(list(map(lambda w: get_word_vector(w, args), tokens)),
                              dtype=np.float32)
 
@@ -45,12 +46,19 @@ def convert_examples_to_features_df(args, examples_df):
         return sentence_vec
 
     tqdm.pandas(desc='mybar')
-    examples_df['vec'] = examples_df.progress_apply(txt2vec, axis=1)
+
+    if args.model_type == 'fasttext_selftrain':
+        examples_df['vec'] = examples_df['text_a'].progress_apply(lambda x: args.model.get_sentence_vector(x))
+    else:
+        examples_df['vec'] = examples_df.progress_apply(txt2vec, axis=1)
+
+    print(examples_df.head())
 
     vecs = examples_df['vec'].values
     labels = examples_df['label'].astype(int).values
 
     return vecs, labels
+
 
 def load_and_cache_examples_df(args, processor, data_type='train'):
     # load wv
