@@ -5,7 +5,7 @@ TNEWS
 | Model             | Text representation   |    F1    |
 | ----------------  | -------               |--------- |
 | **FastText clf**  | 自训练FastText         |   0.63   | 
-| **lgbm**          | 自训练FastText         |   0.58   |
+| **lgbm**          | 自训练FastText_sg      |   0.62   |
 | **lgbm**          | tfidf                 |   0.55   |
 | **lgbm**          | 腾讯WV                 |   0.63   |
 | **SVM**           | 腾讯WV                 |   0.61   |

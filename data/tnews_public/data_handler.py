@@ -126,21 +126,20 @@ def data_norm_for_fasttext_vec(train=None):
     if train:
         model = fasttext.train_unsupervised(
             os.path.join(PATH_DATA_TNEWS_PRE, 'train_ft.txt'),
-            model='cbow',
+            # model='cbow',
             lr=0.05,
             dim=200,
-            epoch=10,
+            epoch=40,
             ws=5,
             minCount=1,
             minn=1,
-            maxn=3,
-            wordNgrams=3)
+            maxn=3)
         model.save_model(
             os.path.join(PATH_MD_FT, 'model_ft_selftrain.pkl'))
 
     model = fasttext.load_model(os.path.join(PATH_MD_FT, 'model_ft_selftrain.pkl'))
-    # print(model.get_subwords('体育运动真的非常好'))
-    print(len(model.get_sentence_vector('体育 运动 真好')))
+    print(model.get_subwords('体育运动真好'))
+    # print(len(model.get_sentence_vector('体育 运动 真好')))
 
 
 def data_check(file_name):
