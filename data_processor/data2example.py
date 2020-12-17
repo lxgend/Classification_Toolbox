@@ -146,52 +146,7 @@ class TnewsProcessor_vec(DataProcessor):
         """See base class."""
         result = self._create_examples(
             self._read_csv(os.path.join(self.data_dir, "train.csv")))
-        # result = result[:150]
-        return result
-
-    def get_dev_examples(self) -> List[InputExample]:
-        """See base class."""
-        result = self._create_examples(
-            self._read_csv(os.path.join(self.data_dir, "dev.csv")))
-        # result = result[:64]
-        return result
-
-    def get_test_examples(self) -> List[InputExample]:
-        """See base class."""
-        return self._create_examples(
-            self._read_csv(os.path.join(self.data_dir, "test.csv")))
-
-    @classmethod
-    def _read_csv(cls, input_file):
-        df = pd.read_csv(input_file, dtype=object, encoding='utf-8')
-        return df
-
-    # according to the data, defines ids for the labels
-    def get_labels(self):
-        with open(os.path.join(self.data_dir, 'labels.json'), 'r', encoding='utf-8') as f:
-            labels = json.load(f)
-        return labels
-
-    def _create_examples(self, df):
-        df = df.rename(columns={'token': 'text_a'})
-        return df
-
-    def get_max_length(self):
-        return 42
-
-
-
-class TnewsProcessor_vec(DataProcessor):
-    """Processor for the TNEWS data set (CLUE version)."""
-
-    def __init__(self, data_dir):
-        self.data_dir = data_dir
-
-    def get_train_examples(self) -> List[InputExample]:
-        """See base class."""
-        result = self._create_examples(
-            self._read_csv(os.path.join(self.data_dir, "train.csv")))
-        # result = result[:150]
+        # result = result[:100]
         return result
 
     def get_dev_examples(self) -> List[InputExample]:

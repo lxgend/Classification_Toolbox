@@ -180,13 +180,14 @@ def main(args):
     args.device = device
 
     # data init
-    clf_data_processor = clf_data_processors[args.task_name]()
-    label_list = clf_data_processor.get_labels()
-    num_labels = len(label_list)
-    args.id2label = {i: label for i, label in enumerate(label_list)}
+    # clf_data_processor = clf_data_processors[args.task_name]()
+    # label_list = clf_data_processor.get_labels()
+    # num_labels = len(label_list)
+    # args.id2label = {i: label for i, label in enumerate(label_list)}
 
-    print('num_labels %d' % (num_labels))
-    print('model %s' % args.model_type)
+    # print('num_labels %d' % (num_labels))
+    # print('model %s' % args.model_type)
+    num_labels=13
 
     # Load pretrained model and tokenizer
     if args.local_rank not in [-1, 0]:
@@ -198,6 +199,8 @@ def main(args):
 
     tokenizer = tokenizer_class.from_pretrained(model_path)
     model = model_class.from_pretrained(model_path, num_labels=num_labels, torchscript=True)
+
+    print(model)
 
     if args.local_rank == 0:
         torch.distributed.barrier()
@@ -295,7 +298,7 @@ class Args(object):
         self.output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'finetuned')
         self.overwrite_cache = 1
         self.max_seq_length = 42
-        self.model_type = 'albert'
+        self.model_type = 'roberta'
 
         self.local_rank = -1
         self.use_cpu = 0
@@ -314,7 +317,7 @@ class Args(object):
         self.do_eval = 0
         self.eval_batch_size = 16
 
-        self.do_test = 1
+        self.do_test = 0
         self.test_batch_size = 1
 
 

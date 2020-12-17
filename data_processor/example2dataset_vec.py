@@ -52,7 +52,6 @@ def convert_examples_to_features_df(args, examples_df):
     else:
         examples_df['vec'] = examples_df.progress_apply(txt2vec, axis=1)
 
-    print(examples_df.head())
 
     vecs = examples_df['vec'].values
     labels = examples_df['label'].astype(int).values

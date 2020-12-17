@@ -14,8 +14,9 @@ TNEWS
 - [x] BERT
 - [ ] XLNet
 - [x] FastText
+- [x] lgbm
 - [ ] TextCNN
-- [ ] lgbm
+- [ ] DPCNN
 - [ ] GCN
 - [ ] ...
 

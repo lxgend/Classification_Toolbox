@@ -16,7 +16,7 @@ PATH_ALBERT = '/Users/lixiang/Documents/Python/PycharmProjects/Workplace/Classif
 # robert, albert, xlnet, ernie
 MODEL_CLASSES = {
     'albert': (AlbertForSequenceClassification, BertTokenizer, PATH_ALBERT),  # 中文模型使用此Tokenizer
-    # 'roberta': (BertForSequenceClassification, BertTokenizer, PATH_BERT),
+    'roberta': (BertForSequenceClassification, BertTokenizer, PATH_BERT),
     # 'xlnet': (XLNetForSequenceClassification, XLNetTokenizer, PATH_XLNET),
 }
 
